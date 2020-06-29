@@ -6,7 +6,7 @@ TARGET ?=/opt/
 MOUNTS = -v $(PROJECT_ROOT):/var/task \
 	-v $(PROJECT_ROOT)result:$(TARGET)
 
-DOCKER = docker run -it --rm -w=/var/task/build
+DOCKER = sudo docker run -it --rm -w=/var/task/build
 build result: 
 	mkdir $@
 
@@ -34,12 +34,12 @@ build/layer.zip: result/bin/identify build
 	#
 	# This is why we zip outside, using -y to store them as symlinks
 	
-	cd result && zip -ry $(PROJECT_ROOT)$@ *
+	cd result && sudo zip -ry $(PROJECT_ROOT)$@ *
 
-build/output.yaml: template.yaml build/layer.zip
+output.yaml: template.yaml build/layer.zip
 	aws cloudformation package --template $< --s3-bucket $(DEPLOYMENT_BUCKET) --output-template-file $@
 
-deploy: build/output.yaml
+deploy: output.yaml
 	aws cloudformation deploy --template $< --stack-name $(STACK_NAME)
 	aws cloudformation describe-stacks --stack-name $(STACK_NAME) --query Stacks[].Outputs --output table
 
